@@ -10,62 +10,9 @@ if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
-const dbPath = resolve(dataDir, "storage.sqlite");
-console.log("Database path:", dbPath);
+console.log("Data directory:", dataDir);
 
-// 2. Initialize Providers from Environment Variables safely
-async function initProviders() {
-  try {
-    const { DatabaseSync } = await import("node:sqlite");
-    const db = new DatabaseSync(dbPath);
-    const now = new Date().toISOString();
-
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS provider_connections (
-        id TEXT PRIMARY KEY,
-        provider TEXT NOT NULL,
-        auth_type TEXT NOT NULL,
-        name TEXT,
-        api_key TEXT,
-        provider_specific_data TEXT,
-        is_active INTEGER DEFAULT 1,
-        created_at TEXT,
-        updated_at TEXT
-      )
-    `);
-
-    const insert = db.prepare(`
-      INSERT OR REPLACE INTO provider_connections (
-        id, provider, auth_type, name, api_key, provider_specific_data, is_active, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)
-    `);
-
-    if (process.env.OPENROUTER_API_KEY) {
-      insert.run('openrouter-main', 'openrouter', 'apikey', 'OpenRouter Main', process.env.OPENROUTER_API_KEY, null, now, now);
-      console.log("Registered: OpenRouter Main");
-    }
-
-    if (process.env.GEMINI_API_KEY) {
-      insert.run('gemini-main', 'gemini', 'apikey', 'Gemini Main', process.env.GEMINI_API_KEY, null, now, now);
-      console.log("Registered: Gemini Main");
-    }
-
-    if (process.env.WANDAPI_API_KEY || process.env.CUSTOM_API_KEY) {
-      const key = process.env.WANDAPI_API_KEY || process.env.CUSTOM_API_KEY;
-      const baseUrl = process.env.WANDAPI_BASE_URL || process.env.CUSTOM_BASE_URL || "https://api.wandapi.com/v1";
-      insert.run('wandapi-main', 'openai-compatible-wandapi', 'apikey', 'WandAPI', key, JSON.stringify({ baseUrl }), now, now);
-      console.log("Registered: WandAPI");
-    }
-
-    console.log("Providers verified successfully.");
-  } catch (err) {
-    console.warn("Notice: Provider auto-registration skipped:", err.message);
-  }
-}
-
-await initProviders();
-
-// 3. Start OmniRoute Server with Webpack and low memory footprint (< 400MB)
+// 2. Start OmniRoute Server with Webpack and low memory footprint (< 400MB)
 console.log("\nStarting OmniRoute dev/production server (memory optimized for Render)...");
 const port = process.env.PORT || "10000";
 const child = spawn(

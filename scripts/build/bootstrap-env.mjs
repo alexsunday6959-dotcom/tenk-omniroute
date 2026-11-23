@@ -143,6 +143,9 @@ function hasEncryptedCredentials(dataDir) {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      if (message.includes("no such table") || message.includes("no such column")) {
+        return false;
+      }
       throw new Error(`Unable to inspect existing database at ${dbPath}: ${message}`);
     }
   }
@@ -172,6 +175,9 @@ function hasEncryptedCredentials(dataDir) {
     }
 
     const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("no such table") || message.includes("no such column")) {
+      return false;
+    }
     const hint = isLikelyBrokenNativeBinding(error)
       ? " The better-sqlite3 native binding loaded but did not expose a usable constructor; try `npm rebuild better-sqlite3`."
       : "";
