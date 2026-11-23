@@ -23,6 +23,14 @@ import {
   isNextIntlExtractorDynamicImportWarning,
 } from "./scripts/build/knownBuildWarnings.mjs";
 
+let hasReactCompiler = false;
+try {
+  await import("babel-plugin-react-compiler");
+  hasReactCompiler = true;
+} catch {
+  hasReactCompiler = false;
+}
+
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const LOCALE_MESSAGES_JSON = /[\\/]src[\\/]i18n[\\/]messages[\\/][^\\/]+\.json$/;
 const distDir = process.env.NEXT_DIST_DIR || ".build/next";
@@ -197,7 +205,7 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   // Issue #67: enable React Compiler — automates memoization, removes manual useCallback/useMemo debt.
   // See: https://next.dev/blog/react-compiler
-  reactCompiler: true,
+  reactCompiler: hasReactCompiler,
   // OmniRoute is a proxy for AI APIs — request bodies routinely include
   // multi-MB payloads (vision models, image edits, base64-encoded files,
   // long chat histories with embedded images). Next.js's Server Action
