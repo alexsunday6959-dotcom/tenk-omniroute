@@ -11,14 +11,15 @@ if (!fs.existsSync(dataDir)) {
 }
 console.log("Data directory:", dataDir);
 
-// 2. Start OmniRoute Server
-//    typescript & @types/react are installed into top-level dependencies during build,
-//    allowing Next.js dev server to start cleanly without runtime install overhead.
-console.log("\nStarting OmniRoute dev server (memory optimized for Render)...");
+// 2. Start OmniRoute in production mode if build exists, otherwise dev
+const hasBuild = fs.existsSync(".build/next") || fs.existsSync(".next");
+const mode = hasBuild ? "start" : "dev";
+console.log(`\nStarting OmniRoute in [${mode}] mode on Render...`);
+
 const port = process.env.PORT || "10000";
 const child = spawn(
   process.execPath,
-  ["--max-old-space-size=450", "scripts/dev/run-next.mjs", "dev"],
+  ["--max-old-space-size=380", "scripts/dev/run-next.mjs", mode],
   {
     stdio: "inherit",
     env: {
@@ -26,10 +27,10 @@ const child = spawn(
       PORT: port,
       DASHBOARD_PORT: port,
       API_PORT: port,
+      NODE_ENV: "production",
       OMNIROUTE_USE_TURBOPACK: "0",
-      OMNIROUTE_MEMORY_MB: "420",
-      NODE_OPTIONS: "--max-old-space-size=450",
-      TSC_COMPILE_ON_ERROR: "true",
+      OMNIROUTE_MEMORY_MB: "350",
+      NODE_OPTIONS: "--max-old-space-size=380",
     }
   }
 );
