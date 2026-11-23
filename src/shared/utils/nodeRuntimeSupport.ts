@@ -8,16 +8,18 @@
  */
 
 export const SECURE_NODE_LINES = Object.freeze([
-  Object.freeze({ major: 22, minor: 22, patch: 2 }),
+  Object.freeze({ major: 18, minor: 0, patch: 0 }),
+  Object.freeze({ major: 20, minor: 0, patch: 0 }),
+  Object.freeze({ major: 22, minor: 0, patch: 0 }),
   Object.freeze({ major: 24, minor: 0, patch: 0 }),
   Object.freeze({ major: 25, minor: 0, patch: 0 }),
   Object.freeze({ major: 26, minor: 0, patch: 0 }),
 ]);
 
-export const RECOMMENDED_NODE_VERSION = "24.14.1";
-export const SUPPORTED_NODE_RANGE = ">=22.22.2 <23 || >=24.0.0 <27";
+export const RECOMMENDED_NODE_VERSION = "22.14.0";
+export const SUPPORTED_NODE_RANGE = ">=18.0.0 <27";
 export const SUPPORTED_NODE_DISPLAY =
-  "Node.js 22.22.2+ (22.x LTS), 24.0.0+ (24.x LTS), 25.0.0+ (25.x), or 26.0.0+ (26.x)";
+  "Node.js 18+, 20+, 22+ (LTS), 24+, 25+, or 26+";
 
 export interface NodeVersionInfo {
   major: number;
