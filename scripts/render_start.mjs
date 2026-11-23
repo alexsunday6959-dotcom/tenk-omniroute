@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import { execSync, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 
 console.log("=== TENK OmniRoute Render Initializer ===");
@@ -11,25 +11,9 @@ if (!fs.existsSync(dataDir)) {
 }
 console.log("Data directory:", dataDir);
 
-// 2. Install TypeScript dev-deps required for Next.js dev server
-//    Render's build step runs with NODE_ENV=production which skips devDependencies.
-//    Next.js dev mode checks package.json for typescript & @types/react presence,
-//    so we must use --save-dev (not --no-save) to satisfy that check.
-console.log("\nInstalling TypeScript dependencies for dev mode...");
-try {
-  execSync(
-    "npm install --save-dev typescript @types/react @types/react-dom @types/node babel-plugin-react-compiler 2>&1",
-    { stdio: "inherit", timeout: 120_000 }
-  );
-  console.log("✅ TypeScript dependencies installed.");
-} catch (e) {
-  console.warn("⚠️  Failed to install TypeScript deps:", e.message);
-  console.warn("   Proceeding anyway — server may still start if .build cache exists.");
-}
-
-// 3. Start OmniRoute Server
-//    Use dev mode with webpack (Turbopack off) and conservative memory limit
-//    to fit within Render Free tier's 512MB.
+// 2. Start OmniRoute Server
+//    typescript & @types/react are installed into top-level dependencies during build,
+//    allowing Next.js dev server to start cleanly without runtime install overhead.
 console.log("\nStarting OmniRoute dev server (memory optimized for Render)...");
 const port = process.env.PORT || "10000";
 const child = spawn(
@@ -45,7 +29,6 @@ const child = spawn(
       OMNIROUTE_USE_TURBOPACK: "0",
       OMNIROUTE_MEMORY_MB: "420",
       NODE_OPTIONS: "--max-old-space-size=450",
-      // Ensure TypeScript doesn't block startup with strict checks
       TSC_COMPILE_ON_ERROR: "true",
     }
   }

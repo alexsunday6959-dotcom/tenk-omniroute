@@ -446,7 +446,12 @@
     "xxhash-wasm": "^1.1.0",
     "yazl": "^3.3.1",
     "zod": "^4.5.4",
-    "zustand": "^5.0.15"
+    "zustand": "^5.0.15",
+    "typescript": "^6.0.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "@types/node": "^26.5.1",
+    "babel-plugin-react-compiler": "^1.0.0"
   },
   "optionalDependencies": {
     "@atjsh/llmlingua-2": "3.0.0",
