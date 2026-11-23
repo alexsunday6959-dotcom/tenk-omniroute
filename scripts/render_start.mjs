@@ -13,11 +13,12 @@ console.log("Data directory:", dataDir);
 
 // 2. Install TypeScript dev-deps required for Next.js dev server
 //    Render's build step runs with NODE_ENV=production which skips devDependencies.
-//    Next.js dev mode requires typescript and @types/react to be present.
+//    Next.js dev mode checks package.json for typescript & @types/react presence,
+//    so we must use --save-dev (not --no-save) to satisfy that check.
 console.log("\nInstalling TypeScript dependencies for dev mode...");
 try {
   execSync(
-    "npm install --no-save typescript @types/react @types/react-dom @types/node babel-plugin-react-compiler 2>&1",
+    "npm install --save-dev typescript @types/react @types/react-dom @types/node babel-plugin-react-compiler 2>&1",
     { stdio: "inherit", timeout: 120_000 }
   );
   console.log("✅ TypeScript dependencies installed.");
