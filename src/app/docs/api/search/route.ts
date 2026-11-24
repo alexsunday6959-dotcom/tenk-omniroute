@@ -1,5 +1,4 @@
-import { NextResponse } from "next/server";
+import { source } from "@/lib/source";
+import { createFromSource } from "fumadocs-core/search/server";
 
-export async function GET() {
-  return NextResponse.json([]);
-}
+export const { GET } = createFromSource(source);
