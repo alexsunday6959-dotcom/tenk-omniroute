@@ -16,10 +16,11 @@ const hasBuild = fs.existsSync(".build/next") || fs.existsSync(".next");
 const mode = hasBuild ? "start" : "dev";
 console.log(`\nStarting OmniRoute in [${mode}] mode on Render...`);
 
+// Starter Plan provides 2GB RAM & 1 CPU - give Node generous 1200MB heap
 const port = process.env.PORT || "10000";
 const child = spawn(
   process.execPath,
-  ["--max-old-space-size=380", "scripts/dev/run-next.mjs", mode],
+  ["--max-old-space-size=1200", "scripts/dev/run-next.mjs", mode],
   {
     stdio: "inherit",
     env: {
@@ -29,8 +30,9 @@ const child = spawn(
       API_PORT: port,
       NODE_ENV: "production",
       OMNIROUTE_USE_TURBOPACK: "0",
-      OMNIROUTE_MEMORY_MB: "350",
-      NODE_OPTIONS: "--max-old-space-size=380",
+      OMNIROUTE_MEMORY_MB: "1100",
+      NODE_OPTIONS: "--max-old-space-size=1200",
+      TSC_COMPILE_ON_ERROR: "true",
     }
   }
 );
