@@ -16,11 +16,13 @@ const hasBuild = fs.existsSync(".build/next") || fs.existsSync(".next");
 const mode = hasBuild ? "start" : "dev";
 console.log(`\nStarting OmniRoute in [${mode}] mode on Render...`);
 
-// Pro Plan provides 4GB RAM & 2 vCPUs - allocate generous 3000MB heap for Webpack
+// Support Starter plan (512MB RAM) or Pro plan gracefully
+const maxHeap = process.env.RENDER_MAX_HEAP || "400";
 const port = process.env.PORT || "10000";
+
 const child = spawn(
   process.execPath,
-  ["--max-old-space-size=3000", "scripts/dev/run-next.mjs", mode],
+  [`--max-old-space-size=${maxHeap}`, "scripts/dev/run-next.mjs", mode],
   {
     stdio: "inherit",
     env: {
@@ -30,8 +32,8 @@ const child = spawn(
       API_PORT: port,
       NODE_ENV: "production",
       OMNIROUTE_USE_TURBOPACK: "0",
-      OMNIROUTE_MEMORY_MB: "2800",
-      NODE_OPTIONS: "--max-old-space-size=3000",
+      OMNIROUTE_MEMORY_MB: String(Math.floor(Number(maxHeap) * 0.9)),
+      NODE_OPTIONS: `--max-old-space-size=${maxHeap}`,
       TSC_COMPILE_ON_ERROR: "true",
     }
   }
