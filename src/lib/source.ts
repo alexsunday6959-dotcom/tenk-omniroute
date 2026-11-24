@@ -1,22 +1,19 @@
-// Fallback-resilient docs source loader for Next.js builds
-let docs = null;
-try {
-  const mod = await import("../../.source/server");
-  docs = mod.docs;
-} catch {
-  docs = {
-    toFumadocsSource: () => ({ files: [] }),
-  };
-}
-
 import { loader } from "fumadocs-core/source";
+
+// Decouple docs markdown imports during production build to prevent Webpack .md loader errors
+let docs = {
+  toFumadocsSource: () => ({ files: [] }),
+};
+
+if (process.env.NODE_ENV !== "production" && typeof window === "undefined") {
+  try {
+    const mod = await import("../../.source/server");
+    docs = mod.docs || docs;
+  } catch {}
+}
 
 const generatedSource = docs.toFumadocsSource();
 
-// Fumadocs currently emits non-page metadata for docs/openapi.yaml without a
-// path. The loader assumes every source entry has a path, and Bun surfaces the
-// resulting failure during Next page-data collection as an opaque ResolveMessage.
-// OpenAPI is consumed by the API route, not the docs page tree, so omit it here.
 const docsSource = {
   ...generatedSource,
   files: (generatedSource.files || []).filter((file) => typeof file.path === "string"),
