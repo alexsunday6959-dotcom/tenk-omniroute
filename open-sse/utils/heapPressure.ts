@@ -64,6 +64,14 @@ export function checkHeapPressureGuard(
   heapUsedMb: number,
   thresholdMb: number = HEAP_PRESSURE_THRESHOLD_MB
 ): HeapPressureGuardResult | null {
+  if (
+    process.env.OMNIROUTE_DISABLE_PRESSURE_GUARD === "1" ||
+    process.env.OMNIROUTE_DISABLE_PRESSURE_GUARD === "true" ||
+    process.env.OMNIROUTE_DISABLE_PRESSURE_GUARD === "yes" ||
+    process.env.OMNIROUTE_DISABLE_PRESSURE_GUARD === "on"
+  ) {
+    return null;
+  }
   if (heapUsedMb <= thresholdMb) return null;
   console.warn(
     `[chatCore] heap pressure guard tripped: ${Math.round(heapUsedMb)}MB > ${thresholdMb}MB; returning 503`

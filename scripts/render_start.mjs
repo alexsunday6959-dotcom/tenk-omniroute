@@ -53,6 +53,9 @@ const child = spawn(
       NODE_OPTIONS: `--max-old-space-size=${maxHeap}`,
       TSC_COMPILE_ON_ERROR: "true",
       OMNIROUTE_MAX_PENDING_MIGRATIONS: "0",
+      OMNIROUTE_DISABLE_PRESSURE_GUARD: "1",
+      OMNIROUTE_PRESSURE_CGROUP_DISABLED: "1",
+      OMNIROUTE_PRESSURE_PSI_DISABLED: "1",
     }
   }
 );

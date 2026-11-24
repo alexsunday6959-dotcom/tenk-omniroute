@@ -78,6 +78,16 @@ export function psiPressureDisabled(): boolean {
   return raw === "1" || raw === "true" || raw === "yes" || raw === "on";
 }
 
+export function cgroupPressureDisabled(): boolean {
+  const raw = process.env.OMNIROUTE_PRESSURE_CGROUP_DISABLED?.trim().toLowerCase();
+  return raw === "1" || raw === "true" || raw === "yes" || raw === "on";
+}
+
+export function resourcePressureDisabled(): boolean {
+  const raw = process.env.OMNIROUTE_DISABLE_PRESSURE_GUARD?.trim().toLowerCase();
+  return raw === "1" || raw === "true" || raw === "yes" || raw === "on";
+}
+
 export const DEFAULT_RESOURCE_PRESSURE_THRESHOLDS: ResourcePressureThresholds = {
   highRatio: 0.85,
   criticalRatio: 0.92,
@@ -248,6 +258,7 @@ export function classifyAdaptiveResourcePressure(
   signals: ResourceSignals,
   thresholds: ResourcePressureThresholds
 ): RawLevel {
+  if (resourcePressureDisabled()) return { severity: "normal", reason: "none" };
   let best: RawLevel = { severity: "normal", reason: "none" };
   if (
     thresholds.heapAbsoluteThresholdMb != null &&
@@ -260,19 +271,14 @@ export function classifyAdaptiveResourcePressure(
     best,
     ratioLevel(signals.v8.heapUsedBytes, signals.v8.heapLimitBytes, thresholds, "v8_heap_ratio")
   );
-  // memory.current includes reclaimable page cache; the kernel drops those
-  // pages under allocation pressure (memory.events high/max stay 0). Ratio the
-  // working set (current minus file cache) so cache-heavy-but-healthy hosts do
-  // not trip the guard. Without memory.stat, fall back to the raw ratio.
-  // memory.high keeps the raw current: the kernel throttles on TOTAL charge
-  // (file cache included) when crossing high, so a workingset ratio there
-  // would miss kernel-side reclaim stalls.
-  const cgroupWorkingSetBytes = workingSetBytes(signals.cgroup);
-  best = maxLevel(
-    best,
-    ratioLevel(cgroupWorkingSetBytes, signals.cgroup.maxBytes, thresholds, "cgroup_ratio")
-  );
-  best = maxLevel(best, cgroupHighLevel(signals, thresholds));
+  if (!cgroupPressureDisabled()) {
+    const cgroupWorkingSetBytes = workingSetBytes(signals.cgroup);
+    best = maxLevel(
+      best,
+      ratioLevel(cgroupWorkingSetBytes, signals.cgroup.maxBytes, thresholds, "cgroup_ratio")
+    );
+    best = maxLevel(best, cgroupHighLevel(signals, thresholds));
+  }
   if (psiPressureDisabled()) return best;
   best = maxLevel(best, psiLevel(signals.psi?.someAvg10 ?? null, thresholds, "psi_some"));
   return maxLevel(best, psiLevel(signals.psi?.fullAvg10 ?? null, thresholds, "psi_full"));
@@ -295,6 +301,7 @@ export function classifyAdaptiveResourcePressureWithHistory(
   thresholds: ResourcePressureThresholds,
   previousEvents: ThrottleCounters | null = null
 ): RawLevel {
+  if (resourcePressureDisabled()) return { severity: "normal", reason: "none" };
   let best: RawLevel = { severity: "normal", reason: "none" };
   // The tracker uses this history-aware path, so honor the same explicit
   // absolute heap fuse as the stateless classifier above.
@@ -308,17 +315,29 @@ export function classifyAdaptiveResourcePressureWithHistory(
     best,
     ratioLevel(signals.v8.heapUsedBytes, signals.v8.heapLimitBytes, thresholds, "v8_heap_ratio")
   );
-  const cgroupWorkingSetBytes = workingSetBytes(signals.cgroup);
-  best = maxLevel(
-    best,
-    ratioLevel(cgroupWorkingSetBytes, signals.cgroup.maxBytes, thresholds, "cgroup_ratio")
-  );
-  const highRatio = ratioLevel(
-    signals.cgroup.currentBytes,
-    signals.cgroup.highBytes,
-    thresholds,
-    "cgroup_high"
-  );
+  if (!cgroupPressureDisabled()) {
+    const cgroupWorkingSetBytes = workingSetBytes(signals.cgroup);
+    best = maxLevel(
+      best,
+      ratioLevel(cgroupWorkingSetBytes, signals.cgroup.maxBytes, thresholds, "cgroup_ratio")
+    );
+    const highRatio = ratioLevel(
+      signals.cgroup.currentBytes,
+      signals.cgroup.highBytes,
+      thresholds,
+      "cgroup_high"
+    );
+    if (highRatio?.severity === "critical") {
+      const throttled = hasKernelThrottleProof(signals, previousEvents);
+      if (throttled !== false) {
+        best = maxLevel(best, highRatio);
+      } else {
+        best = maxLevel(best, { severity: "high", reason: "cgroup_high" });
+      }
+    } else if (highRatio) {
+      best = maxLevel(best, highRatio);
+    }
+  }
   // A raw total above the high mark only becomes critical on kernel proof of
   // real throttling; without proof it stays an informative high that never
   // returns 503. Hosts without memory.events keep the raw ratio (fallback).

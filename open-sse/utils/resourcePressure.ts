@@ -503,6 +503,14 @@ function activeRuntime(): ResourcePressureRuntime {
 }
 
 export function checkResourcePressureGuard(): ResourcePressureGuardResult | null {
+  if (
+    process.env.OMNIROUTE_DISABLE_PRESSURE_GUARD === "1" ||
+    process.env.OMNIROUTE_DISABLE_PRESSURE_GUARD === "true" ||
+    process.env.OMNIROUTE_DISABLE_PRESSURE_GUARD === "yes" ||
+    process.env.OMNIROUTE_DISABLE_PRESSURE_GUARD === "on"
+  ) {
+    return null;
+  }
   return activeRuntime().check();
 }
 
