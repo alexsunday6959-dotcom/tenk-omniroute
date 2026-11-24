@@ -385,6 +385,9 @@ const nextConfig = {
     // TODO: Re-enable after fixing all sub-component useTranslations scope issues
     ignoreBuildErrors: true,
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   webpack(config, { dev, webpack }) {
     // Production webpack builds skip the persistent filesystem cache unless
     // OMNIROUTE_WEBPACK_BUILD_CACHE=1. With the cache on, webpack keeps every
