@@ -211,7 +211,8 @@ export function getWindowsBuildProfileDir() {
 export function resolveNextBuildEnv(baseEnv = process.env, platform = process.platform) {
   const env = {
     ...baseEnv,
-    NEXT_PRIVATE_BUILD_WORKER: baseEnv.NEXT_PRIVATE_BUILD_WORKER || "0",
+    NEXT_PRIVATE_BUILD_WORKER: "0",
+    NEXT_CPU_NUM: "1",
     // Reliable build signal inherited by every spawned `next build` worker.
     // Next.js workers sometimes drop NEXT_PHASE, so DB entry points key off
     // OMNIROUTE_BUILDING=1 to stub out SQLite and never load the native
@@ -276,7 +277,7 @@ export function resolveNextBuildEnv(baseEnv = process.env, platform = process.pl
     // headroom without risk. NOTE: heap size does NOT fix a poisoned scope — if the build
     // OOMs/livelocks far above this, check for worktrees/cruft leaking into the tsconfig
     // scope (run `npm run check:build-scope`), not for "more heap". See incident 2026-06-25.
-    const heapMb = Number(baseEnv.OMNIROUTE_BUILD_MEMORY_MB) || 4096;
+    const heapMb = Number(baseEnv.OMNIROUTE_BUILD_MEMORY_MB) || 3500;
     env.NODE_OPTIONS = `${env.NODE_OPTIONS || ""} --max-old-space-size=${heapMb}`.trim();
   }
 
