@@ -1,4 +1,14 @@
-import { docs } from "../../.source/server";
+// Fallback-resilient docs source loader for Next.js builds
+let docs = null;
+try {
+  const mod = await import("../../.source/server");
+  docs = mod.docs;
+} catch {
+  docs = {
+    toFumadocsSource: () => ({ files: [] }),
+  };
+}
+
 import { loader } from "fumadocs-core/source";
 
 const generatedSource = docs.toFumadocsSource();
@@ -9,7 +19,7 @@ const generatedSource = docs.toFumadocsSource();
 // OpenAPI is consumed by the API route, not the docs page tree, so omit it here.
 const docsSource = {
   ...generatedSource,
-  files: generatedSource.files.filter((file) => typeof file.path === "string"),
+  files: (generatedSource.files || []).filter((file) => typeof file.path === "string"),
 };
 
 export const source = loader({
