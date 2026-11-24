@@ -10,6 +10,42 @@ if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 console.log("Data directory:", dataDir);
+const dbPath = resolve(dataDir, "storage.sqlite");
+
+// 1.5. Ensure Admin Password in SQLite settings
+const initialPassword = process.env.INITIAL_PASSWORD || "admin123456";
+try {
+  const { DatabaseSync } = await import("node:sqlite");
+  const db = new DatabaseSync(dbPath);
+  
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS key_value (
+      namespace TEXT NOT NULL,
+      key TEXT NOT NULL,
+      value TEXT NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (namespace, key)
+    )
+  `);
+
+  const bcryptMod = await import("bcryptjs");
+  const bcrypt = bcryptMod.default || bcryptMod;
+  const hashedPassword = bcrypt.hashSync(initialPassword, 12);
+  
+  const insertSetting = db.prepare(`
+    INSERT OR REPLACE INTO key_value (namespace, key, value, updated_at)
+    VALUES ('settings', ?, ?, CURRENT_TIMESTAMP)
+  `);
+  
+  insertSetting.run('password', hashedPassword);
+  insertSetting.run('setupComplete', 'true');
+  insertSetting.run('requireLogin', 'true');
+  console.log(`[AUTH] Admin password initialized successfully.`);
+  db.close();
+} catch (err) {
+  console.warn("[AUTH] Notice: Could not sync password in render_start:", err.message);
+}
 
 // 2. Start OmniRoute in production mode if build exists, otherwise dev
 const hasBuild = fs.existsSync(".build/next") || fs.existsSync(".next");
